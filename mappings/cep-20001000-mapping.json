@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/cep/20001000"
+  },
+  "response": {
+    "status": 200,
+    "bodyFileName": "cep-20001000.json",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}
