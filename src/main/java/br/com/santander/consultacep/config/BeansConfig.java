@@ -8,7 +8,7 @@ import br.com.santander.consultacep.application.service.CepService;
 import br.com.santander.consultacep.domain.port.in.CepUseCase;
 import br.com.santander.consultacep.domain.port.out.CepExternoPort;
 import br.com.santander.consultacep.domain.port.out.EnderecoRepositoryPort;
-import br.com.santander.consultacep.domain.port.out.logRepositoryPort;
+import br.com.santander.consultacep.domain.port.out.LogRepositoryPort;
 
 @Configuration
 public class BeansConfig {
@@ -17,7 +17,7 @@ public class BeansConfig {
 	public CepUseCase cepUseCase(
 	    @Qualifier("enderecoPersistenceAdapter") EnderecoRepositoryPort repo,
 	    CepExternoPort api,
-	    logRepositoryPort log
+	    LogRepositoryPort log
 	) {
 	    return new CepService(repo, log, api);
 	}

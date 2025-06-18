@@ -6,13 +6,13 @@ import org.springframework.stereotype.Component;
 
 import br.com.santander.consultacep.domain.model.Endereco;
 import br.com.santander.consultacep.domain.model.Log;
-import br.com.santander.consultacep.domain.port.out.logRepositoryPort;
+import br.com.santander.consultacep.domain.port.out.LogRepositoryPort;
 import br.com.santander.consultacep.infrastructure.adapter.out.database.endereco.EnderecoEntity;
 import lombok.AllArgsConstructor;
 
 @Component
 @AllArgsConstructor
-public class LogPersistenceAdapter implements logRepositoryPort {
+public class LogPersistenceAdapter implements LogRepositoryPort {
 
     private final LogJpaRepository repository;
 
