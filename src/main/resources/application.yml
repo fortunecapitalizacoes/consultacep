@@ -4,3 +4,14 @@ server:
 spring:
   application:
     name: consultacep
+
+resilience4j:
+  retry:
+    instances:
+      cepApi:
+        max-attempts: 3
+        wait-duration: 5s
+        retry-exceptions:
+          - java.io.IOException
+          - java.net.SocketTimeoutException
+          - br.com.santander.consultacep.infrastructure.exception.ExternalServiceException

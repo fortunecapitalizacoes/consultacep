@@ -5,6 +5,7 @@ import org.springframework.web.client.RestTemplate;
 
 import br.com.santander.consultacep.domain.model.Endereco;
 import br.com.santander.consultacep.domain.port.out.CepExternoPort;
+import io.github.resilience4j.retry.annotation.Retry;
 
 @Component
 public class ViaCepClientAdapter implements CepExternoPort {
@@ -12,6 +13,7 @@ public class ViaCepClientAdapter implements CepExternoPort {
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
+    @Retry(name = "cepApiRetry", fallbackMethod = "fallbackBuscarPorCep")
     public Endereco buscarPorCep(String cep) {
         ViaCepResponse response = restTemplate.getForObject(
                 "http://localhost:8080/cep/" + cep, ViaCepResponse.class);
