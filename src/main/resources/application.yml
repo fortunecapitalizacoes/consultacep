@@ -9,9 +9,10 @@ resilience4j:
   retry:
     instances:
       cepApi:
-        max-attempts: 3
-        wait-duration: 5s
-        retry-exceptions:
+        maxAttempts: 3
+        waitDuration: 500ms
+        retryExceptions:
           - java.io.IOException
           - java.net.SocketTimeoutException
-          - br.com.santander.consultacep.infrastructure.exception.ExternalServiceException
+        ignoreExceptions:
+          - java.lang.IllegalArgumentException
