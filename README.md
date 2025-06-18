@@ -2,6 +2,9 @@
 
 Esta é uma API REST desenvolvida em **Spring Boot**, que permite consultar um CEP em um servidor externo (mockado com WireMock) e salvar o endereço retornado no **MongoDB**. O projeto adota **arquitetura hexagonal**, **DDD (Domain-Driven Design)** e os princípios do **SOLID** para garantir uma base de código limpa, desacoplada e fácil de manter.
 
+
+![Diagrama da Arquitetura](https://raw.githubusercontent.com/fortunecapitalizacoes/Pedidos/refs/heads/main/Pedido.jpg)
+
 ---
 
 ## 🚀 Funcionalidade
