@@ -8,14 +8,15 @@ import br.com.santander.consultacep.domain.port.out.LogRepositoryPort;
 import br.com.santander.consultacep.infrastructure.exception.ExternalServiceException;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Serviço responsável pela busca e persistência de Endereços
- * a partir da consulta de CEP.
- * 
- * Aplica retry e circuit breaker para tolerância a falhas em chamadas externas.
+ * a partir da consulta de CEP, com tolerância a falhas.
  */
 @Slf4j
 @AllArgsConstructor
@@ -26,44 +27,42 @@ public class CepService implements CepUseCase {
     private final CepExternoPort cepPort;
 
     /**
-     * Consulta um endereço pelo CEP e salva o resultado no repositório.
-     * 
-     * Caso a chamada ao serviço externo falhe, será aplicado retry e circuit breaker,
-     * com fallback para método alternativo.
-     * 
+     * Consulta e salva endereço, com mecanismos de retry, circuit breaker e timeout.
+     *
      * @param cep CEP a ser consultado
-     * @return Endereço consultado e salvo
-     * @throws ExternalServiceException se o serviço externo estiver indisponível
+     * @return CompletableFuture<Endereco> de forma resiliente
      */
     @Override
     @Retry(name = "cepApi", fallbackMethod = "fallbackBuscarESalvar")
     @CircuitBreaker(name = "cepApi", fallbackMethod = "fallbackBuscarESalvar")
-    public Endereco buscarESalvar(String cep) {
-        log.info("Iniciando consulta para o CEP {}", cep);
+    @TimeLimiter(name = "cepApi", fallbackMethod = "fallbackBuscarESalvar")
+    public CompletableFuture<Endereco> buscarESalvar(String cep) {
+        return CompletableFuture.supplyAsync(() -> {
+            log.info("Iniciando consulta para o CEP {}", cep);
 
-        Endereco endereco = cepPort.buscarPorCep(cep);
+            Endereco endereco = cepPort.buscarPorCep(cep);
 
-        enderecoRepository.salvar(endereco);
-        logRepositoryPort.salvar(endereco);
+            enderecoRepository.salvar(endereco);
+            logRepositoryPort.salvar(endereco);
 
-        log.info("Endereço salvo com sucesso para o CEP {}", cep);
-        return endereco;
+            log.info("Endereço salvo com sucesso para o CEP {}", cep);
+            return endereco;
+        });
     }
 
     /**
-     * Método fallback chamado quando a consulta ao serviço externo falhar,
-     * após tentativas de retry e acionamento do circuit breaker.
-     * 
-     * Registra a falha no log e lança exceção personalizada.
-     * 
-     * @param cep CEP que originou a falha
-     * @param throwable exceção original lançada
-     * @return nunca retorna (lança exceção)
-     * @throws ExternalServiceException exceção indicando indisponibilidade do serviço externo
+     * Fallback para falhas técnicas (conexão, timeout, etc).
+     *
+     * @param cep CEP da tentativa
+     * @param throwable Exceção original
+     * @return CompletableFuture com exceção encapsulada
      */
-    public Endereco fallbackBuscarESalvar(String cep, Throwable throwable) {
-        log.error("Erro ao consultar o CEP {}: {}", cep, throwable.getMessage());
+    public CompletableFuture<Endereco> fallbackBuscarESalvar(String cep, Throwable throwable) {
+        log.error("Erro ao consultar o CEP {}. Falha técnica: {}", cep, throwable.getMessage(), throwable);
         logRepositoryPort.salvarFalha(cep, throwable.getMessage());
-        throw new ExternalServiceException("Serviço de consulta de CEP indisponível no momento. Tente novamente mais tarde.");
+
+        return CompletableFuture.failedFuture(
+                new ExternalServiceException("Serviço de consulta de CEP indisponível no momento. Tente novamente mais tarde.")
+        );
     }
 }

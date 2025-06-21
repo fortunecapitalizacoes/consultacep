@@ -11,50 +11,62 @@ import org.mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 class CepServiceTest {
 
-    @Mock
-    private EnderecoRepositoryPort enderecoRepository;
+	  @Mock
+	    private EnderecoRepositoryPort enderecoRepository;
 
-    @Mock
-    private LogRepositoryPort logRepositoryPort;
+	    @Mock
+	    private LogRepositoryPort logRepositoryPort;
 
-    @Mock
-    private CepExternoPort cepExternoPort;
+	    @Mock
+	    private CepExternoPort cepPort;
 
-    @InjectMocks
-    private CepService cepService;
+	    @InjectMocks
+	    private CepService cepService;
 
-    @BeforeEach
-    void setup() {
-        MockitoAnnotations.openMocks(this);
-    }
+	    @BeforeEach
+	    void setup() {
+	        MockitoAnnotations.openMocks(this);
+	    }
 
-    @Test
-    void buscarESalvar_deveRetornarEndereco_quandoConsultaForSucesso() {
-        String cep = "12345678";
-        Endereco enderecoMock = new Endereco();
-        // Suponha que Endereco tenha setters ou construtor para popular os dados, se necessário
+	    @Test
+	    void deveBuscarESalvarEnderecoComSucesso() throws Exception {
+	        // Arrange
+	        String cep = "12345678";
+	        Endereco endereco = new Endereco();
+	        endereco.setCep(cep);
 
-        when(cepExternoPort.buscarPorCep(cep)).thenReturn(enderecoMock);
+	        when(cepPort.buscarPorCep(cep)).thenReturn(endereco);
 
-        Endereco resultado = cepService.buscarESalvar(cep);
+	        // Act
+	        CompletableFuture<Endereco> future = cepService.buscarESalvar(cep);
 
-        assertNotNull(resultado);
-        assertEquals(enderecoMock, resultado);
-        verify(enderecoRepository).salvar(enderecoMock);
-        verify(logRepositoryPort).salvar(enderecoMock);
-    }
+	        // Assert
+	        Endereco resultado = future.get();
+	        assertNotNull(resultado);
+	        assertEquals(cep, resultado.getCep());
+	        verify(enderecoRepository).salvar(endereco);
+	        verify(logRepositoryPort).salvar(endereco);
+	    }
 
-    @Test
-    void fallbackBuscarESalvar_deveLancarExcecaoECriarLogFalha_quandoServicoExternoFalhar() {
-        String cep = "12345678";
-        Throwable throwable = new RuntimeException("Falha no serviço externo");
+	    @Test
+	    void deveExecutarFallbackQuandoCepPortLancaExcecao() {
+	        // Arrange
+	        String cep = "87654321";
+	        RuntimeException excecao = new RuntimeException("Serviço indisponível");
 
-        ExternalServiceException exception = assertThrows(ExternalServiceException.class,
-                () -> cepService.fallbackBuscarESalvar(cep, throwable));
+	        when(cepPort.buscarPorCep(cep)).thenThrow(excecao);
 
-        assertEquals("Serviço de consulta de CEP indisponível no momento. Tente novamente mais tarde.", exception.getMessage());
-        verify(logRepositoryPort).salvarFalha(cep, throwable.getMessage());
-    }
+	        // Act
+	        CompletableFuture<Endereco> future = cepService.fallbackBuscarESalvar(cep, excecao);
+
+	        // Assert
+	        ExecutionException executionException = assertThrows(ExecutionException.class, future::get);
+	        assertTrue(executionException.getCause() instanceof ExternalServiceException);
+	        verify(logRepositoryPort).salvarFalha(eq(cep), contains("Serviço indisponível"));
+	    }
 }

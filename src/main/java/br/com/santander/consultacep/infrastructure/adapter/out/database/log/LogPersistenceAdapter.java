@@ -10,10 +10,10 @@ import br.com.santander.consultacep.infrastructure.adapter.out.database.endereco
 import lombok.AllArgsConstructor;
 
 /**
- * Adapter de persistência responsável pelo armazenamento de logs
+ * Adapter de persistência responsável pelo armazenamento de logs.
  * relacionados a consultas de CEP.
  * 
- * Implementa a porta de repositório de logs para salvar logs
+ * Implementa a porta de repositório de logs para salvar logs.
  * de sucesso e falha no banco de dados.
  */
 @Component
@@ -25,7 +25,7 @@ public class LogPersistenceAdapter implements LogRepositoryPort {
     /**
      * Salva um log de sucesso contendo os dados do endereço consultado.
      * 
-     * @param endereco endereço consultado para registro no log
+     * @param endereco endereço consultado para registro no log.
      */
     @Override
     public void salvar(Endereco endereco) {
@@ -49,8 +49,8 @@ public class LogPersistenceAdapter implements LogRepositoryPort {
     /**
      * Salva um log de falha contendo o CEP consultado e o motivo da falha.
      * 
-     * @param cep CEP que originou a falha
-     * @param motivo descrição do motivo da falha
+     * @param cep CEP que originou a falha.
+     * @param motivo descrição do motivo da falha.
      */
     @Override
     public void salvarFalha(String cep, String motivo) {

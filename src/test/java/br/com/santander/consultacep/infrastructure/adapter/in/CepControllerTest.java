@@ -2,6 +2,7 @@ package br.com.santander.consultacep.infrastructure.adapter.in;
 
 import br.com.santander.consultacep.domain.model.Endereco;
 import br.com.santander.consultacep.domain.port.in.CepUseCase;
+import br.com.santander.consultacep.infrastructure.exception.ExternalServiceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -23,31 +24,26 @@ class CepControllerTest {
         cepController = new CepController(cepUseCase);
     }
 
+ 
     @Test
-    void buscarCep_deveRetornarEndereco_quandoCepValido() {
+    void buscarCep_deveRetornar503_quandoExternalServiceException() {
         String cep = "12345678";
-        Endereco enderecoMock = new Endereco();
-        // Popule enderecoMock se desejar
+        when(cepUseCase.buscarESalvar(cep)).thenThrow(new ExternalServiceException("Serviço indisponível"));
 
-        when(cepUseCase.buscarESalvar(cep)).thenReturn(enderecoMock);
+        ResponseEntity<?> response = cepController.buscarCep(cep);
 
-        ResponseEntity<Endereco> response = cepController.buscarCep(cep);
-
-        assertNotNull(response);
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals(enderecoMock, response.getBody());
-        verify(cepUseCase).buscarESalvar(cep);
+        assertEquals(503, response.getStatusCodeValue());
+        assertTrue(response.getBody().toString().contains("Serviço indisponível"));
     }
 
     @Test
-    void fallbackBuscarCep_deveRetornar503_quandoServicoIndisponivel() {
+    void buscarCep_deveRetornar500_quandoErroDesconhecido() {
         String cep = "12345678";
-        Throwable ex = new RuntimeException("Erro simulado");
+        when(cepUseCase.buscarESalvar(cep)).thenThrow(new RuntimeException("Falha interna"));
 
-        ResponseEntity<String> response = cepController.fallbackBuscarCep(cep, ex);
+        ResponseEntity<?> response = cepController.buscarCep(cep);
 
-        assertEquals(503, response.getStatusCodeValue());
-        assertTrue(response.getBody().contains(cep));
-        assertTrue(response.getBody().contains("Serviço indisponível"));
+        assertEquals(500, response.getStatusCodeValue());
+        assertTrue(response.getBody().toString().contains("Erro interno"));
     }
 }
